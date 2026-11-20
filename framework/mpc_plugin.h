@@ -646,7 +646,9 @@ inline VstIntPtr dispatcher(AEffect* e, VstInt32 opcode, VstInt32 index, VstIntP
     Plugin* p = self(e);
     if (p == nullptr) return 0;
     char* str = static_cast<char*>(ptr);
-    const int kStr = 32; // we never write more than this many chars (+NUL) into host string buffers
+    // Param name/unit: short. Param display: long enough for chart Labels on the MPC.
+    const int kParamNameStr = 32;
+    const int kParamDisplayStr = 128;
 
     switch (opcode)
     {
@@ -667,13 +669,15 @@ inline VstIntPtr dispatcher(AEffect* e, VstInt32 opcode, VstInt32 index, VstIntP
 
         case effGetParamLabel:
             if (index < 0 || index >= p->numParams()) return 0;
-            copyString(str, kStr, p->param(index).unit.c_str()); return 0;
+            copyString(str, kParamNameStr, p->param(index).unit.c_str()); return 0;
         case effGetParamDisplay:
+            // MPC Label widgets (e.g. CK Chart lines) need far more than the VST2
+            // 8-char guideline; keep names/units short, allow long value text.
             if (index < 0 || index >= p->numParams()) return 0;
-            copyString(str, kStr, p->displayText(index).c_str()); return 0;
+            copyString(str, kParamDisplayStr, p->displayText(index).c_str()); return 0;
         case effGetParamName:
             if (index < 0 || index >= p->numParams()) return 0;
-            copyString(str, kStr, p->param(index).name.c_str()); return 0;
+            copyString(str, kParamNameStr, p->param(index).name.c_str()); return 0;
         case effCanBeAutomated:
             return (index >= 0 && index < p->numParams() && p->param(index).automatable) ? 1 : 0;
         case effString2Parameter:
